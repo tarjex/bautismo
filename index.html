@@ -87,14 +87,19 @@ textarea{resize:vertical;min-height:110px;font-family:'Caveat',cursive;font-size
 .barra i{display:block;height:100%;width:0;background:var(--azul-fuerte);transition:width .3s}
 
 /* ---------- ALBUM ---------- */
-.album{columns:4 220px;column-gap:16px}
-.foto{break-inside:avoid;margin-bottom:16px;background:#fff;padding:9px 9px 34px;border-radius:6px;box-shadow:var(--sombra);cursor:zoom-in;position:relative;transition:.3s;animation:aparece .6s both}
-.foto:nth-child(3n+1){transform:rotate(-1.6deg)}
-.foto:nth-child(3n+2){transform:rotate(1.2deg)}
-.foto:nth-child(3n){transform:rotate(-.6deg)}
-.foto:hover{transform:rotate(0) scale(1.03);z-index:2}
-.foto img{width:100%;display:block;border-radius:3px;background:#eef3f7;min-height:90px}
-.foto .quien{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-family:'Caveat',cursive;font-size:1.15rem;color:var(--suave)}
+.barra-album{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.barra-album .total{font-family:'Caveat',cursive;font-size:1.5rem;color:var(--azul-fuerte)}
+.barra-album select{border:1.5px solid #e3dccb;background:#fff;border-radius:50px;padding:8px 14px;font-family:inherit;font-size:.9rem;color:var(--texto);max-width:60%}
+.album{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px}
+@media(min-width:700px){.album{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}}
+.foto{aspect-ratio:1/1;overflow:hidden;border-radius:10px;cursor:zoom-in;position:relative;background:#eef3f7;box-shadow:0 3px 10px rgba(80,100,120,.15);animation:aparece .5s both;transition:.25s}
+.foto:hover{transform:scale(1.03);z-index:2}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto .quien{position:absolute;left:0;right:0;bottom:0;padding:16px 6px 4px;text-align:center;font-size:.72rem;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.55));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:.2s}
+.foto:hover .quien{opacity:1}
+.mas{text-align:center;margin-top:22px}
+.prev{position:relative}
+.prev button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:#c0564f;color:#fff;font-size:.8rem;cursor:pointer;line-height:1}
 @keyframes aparece{from{opacity:0;transform:translateY(20px) scale(.96)}}
 .vacio{text-align:center;color:var(--suave);padding:30px;font-family:'Caveat',cursive;font-size:1.5rem;grid-column:1/-1}
 
@@ -184,8 +189,8 @@ footer .ver{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-style:i
 
       <label>Tus fotos</label>
       <div class="drop" id="drop">
-        <b>📷 Tocá para elegir fotos</b>
-        <span>o arrastralas hasta acá · podés elegir varias</span>
+        <b>📷 Elegir fotos</b>
+        <span>Seleccioná todas las que quieras de una sola vez (hasta 30). También podés tocar de nuevo para agregar más.</span>
       </div>
       <input type="file" id="fArchivos" accept="image/*" multiple hidden>
       <div class="previas" id="previas"></div>
@@ -197,7 +202,12 @@ footer .ver{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-style:i
       <div class="estado" id="estFoto"></div>
     </form>
 
+    <div class="barra-album">
+      <div class="total" id="totalFotos"></div>
+      <select id="filtro" aria-label="Filtrar por persona"><option value="">Todas las personas</option></select>
+    </div>
     <div class="album" id="album"></div>
+    <div class="mas"><button class="btn sec" id="btnMas" type="button" style="display:none">Ver más fotos</button></div>
   </div>
 </section>
 
@@ -230,6 +240,7 @@ footer .ver{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-style:i
 
 <!-- ======================= CONFIGURACIÓN ======================= -->
 
+
 <footer>
   <div class="ver" id="fPie">Gracias por compartir este día tan especial</div>
   <div style="margin-top:6px">✦ ✦ ✦</div>
@@ -261,7 +272,8 @@ const CONFIG = {
   SUPABASE_ANON_KEY: "sb_publishable_iyh0nkDc9uYwkWm5EX8HXA_7jXySR-M",
   BUCKET:            "fotos",
   MAX_PX:            1600, // las fotos se achican a este tamaño máximo
-  MAX_FOTOS_POR_VEZ: 10
+  MAX_FOTOS_POR_VEZ: 30,
+  FOTOS_POR_PAGINA:  24    // cuántas fotos se muestran antes de "Ver más"
 };
 
 /* ===================================================================== */
@@ -269,7 +281,7 @@ const $ = id => document.getElementById(id);
 const ok = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase);
 const db = ok ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null;
 
-let fotos = [], mensajes = [], seleccion = [], idxLb = 0;
+let fotos = [], lista = [], mensajes = [], seleccion = [], idxLb = 0, mostradas = 0;
 
 /* ---------- textos de la config ---------- */
 document.title = "Bautismo de " + CONFIG.NOMBRE;
@@ -303,14 +315,31 @@ if (!ok) {
 }
 
 /* ---------- render ---------- */
-function renderFotos() {
+function actualizarFiltro() {
+  const sel = $("filtro"), actual = sel.value;
+  const nombres = [...new Set(fotos.map(f => (f.nombre || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  sel.innerHTML = '<option value="">Todas las personas</option>';
+  nombres.forEach(n => { const o = document.createElement("option"); o.value = n; o.textContent = n; sel.appendChild(o); });
+  sel.value = nombres.includes(actual) ? actual : "";
+}
+
+function renderFotos(reset = false) {
   const a = $("album");
+  actualizarFiltro();
+  if (reset || !mostradas) mostradas = CONFIG.FOTOS_POR_PAGINA;
+  const quien = $("filtro").value;
+  lista = quien ? fotos.filter(f => (f.nombre || "").trim() === quien) : fotos;
+  $("totalFotos").textContent = fotos.length ? `📸 ${lista.length} foto${lista.length === 1 ? "" : "s"}` : "";
   a.innerHTML = "";
-  if (!fotos.length) { a.innerHTML = '<div class="vacio">Sé el primero en subir una foto 📸</div>'; return; }
-  fotos.forEach((f, i) => {
+  if (!lista.length) {
+    a.innerHTML = '<div class="vacio">Sé el primero en subir una foto 📸</div>';
+    $("btnMas").style.display = "none";
+    return;
+  }
+  lista.slice(0, mostradas).forEach((f, i) => {
     const d = document.createElement("div");
     d.className = "foto";
-    d.style.animationDelay = Math.min(i * 0.05, 0.6) + "s";
+    d.style.animationDelay = Math.min((i % CONFIG.FOTOS_POR_PAGINA) * 0.03, 0.5) + "s";
     const img = document.createElement("img");
     img.src = f.url; img.loading = "lazy"; img.alt = "Foto de " + (f.nombre || "invitado");
     const q = document.createElement("div");
@@ -319,7 +348,13 @@ function renderFotos() {
     d.onclick = () => abrirLb(i);
     a.appendChild(d);
   });
+  const restantes = lista.length - mostradas;
+  $("btnMas").style.display = restantes > 0 ? "inline-block" : "none";
+  $("btnMas").textContent = `Ver más fotos (${restantes})`;
 }
+
+$("btnMas").onclick = () => { mostradas += CONFIG.FOTOS_POR_PAGINA; renderFotos(); };
+$("filtro").onchange = () => renderFotos(true);
 
 function renderMensajes() {
   const c = $("cartas");
@@ -362,16 +397,27 @@ cargar();
 /* ---------- selección de fotos ---------- */
 const drop = $("drop"), inp = $("fArchivos");
 drop.onclick = () => inp.click();
-inp.onchange = () => setSel([...inp.files]);
+inp.onchange = () => { setSel([...inp.files]); inp.value = ""; };
 ["dragover", "dragenter"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
 ["dragleave", "drop"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove("over"); }));
 drop.addEventListener("drop", ev => setSel([...ev.dataTransfer.files]));
 
 function setSel(files) {
-  seleccion = files.filter(f => f.type.startsWith("image/")).slice(0, CONFIG.MAX_FOTOS_POR_VEZ);
+  const nuevas = files.filter(f => f.type.startsWith("image/"));
+  seleccion = [...seleccion, ...nuevas].slice(0, CONFIG.MAX_FOTOS_POR_VEZ);
+  pintarPrevias();
+}
+
+function pintarPrevias() {
   const p = $("previas"); p.innerHTML = "";
-  seleccion.forEach(f => { const im = document.createElement("img"); im.src = URL.createObjectURL(f); p.appendChild(im); });
-  $("estFoto").textContent = seleccion.length ? seleccion.length + " foto(s) lista(s)" : "";
+  seleccion.forEach((f, i) => {
+    const w = document.createElement("div"); w.className = "prev";
+    const im = document.createElement("img"); im.src = URL.createObjectURL(f);
+    const x = document.createElement("button"); x.type = "button"; x.textContent = "✕";
+    x.onclick = () => { seleccion.splice(i, 1); pintarPrevias(); };
+    w.append(im, x); p.appendChild(w);
+  });
+  $("estFoto").textContent = seleccion.length ? `${seleccion.length} foto${seleccion.length === 1 ? "" : "s"} lista${seleccion.length === 1 ? "" : "s"} para subir` : "";
   $("estFoto").className = "estado";
 }
 
@@ -400,21 +446,34 @@ $("formFoto").addEventListener("submit", async e => {
   if (!seleccion.length) { est.textContent = "Elegí al menos una foto"; est.className = "estado err"; return; }
   btn.disabled = true; barra.style.display = "block"; est.className = "estado";
   try {
-    for (let i = 0; i < seleccion.length; i++) {
-      est.textContent = `Subiendo ${i + 1} de ${seleccion.length}…`;
-      barra.firstElementChild.style.width = (i / seleccion.length * 100) + "%";
-      const blob = await achicar(seleccion[i]);
+    const total = seleccion.length;
+    let hechas = 0;
+    est.textContent = `Subiendo 0 de ${total}…`;
+    const subir = async (file, i) => {
+      const blob = await achicar(file);
       if (!ok) {
         fotos.unshift({ id: Date.now() + i, nombre, url: URL.createObjectURL(blob) });
-        continue;
+      } else {
+        const ruta = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        const up = await db.storage.from(CONFIG.BUCKET).upload(ruta, blob, { contentType: "image/jpeg" });
+        if (up.error) throw up.error;
+        const url = db.storage.from(CONFIG.BUCKET).getPublicUrl(ruta).data.publicUrl;
+        const ins = await db.from("fotos").insert({ nombre, url });
+        if (ins.error) throw ins.error;
       }
-      const ruta = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-      const up = await db.storage.from(CONFIG.BUCKET).upload(ruta, blob, { contentType: "image/jpeg" });
-      if (up.error) throw up.error;
-      const url = db.storage.from(CONFIG.BUCKET).getPublicUrl(ruta).data.publicUrl;
-      const ins = await db.from("fotos").insert({ nombre, url });
-      if (ins.error) throw ins.error;
-    }
+      hechas++;
+      est.textContent = `Subiendo ${hechas} de ${total}…`;
+      barra.firstElementChild.style.width = (hechas / total * 100) + "%";
+    };
+    // sube de a 3 fotos en paralelo
+    const cola = [...seleccion];
+    const trabajadores = Array.from({ length: Math.min(3, total) }, async () => {
+      while (cola.length) {
+        const idx = total - cola.length;
+        await subir(cola.shift(), idx);
+      }
+    });
+    await Promise.all(trabajadores);
     barra.firstElementChild.style.width = "100%";
     est.textContent = "¡Fotos subidas! Gracias 💙"; est.className = "estado ok";
     seleccion = []; inp.value = ""; $("previas").innerHTML = "";
@@ -458,11 +517,11 @@ $("formMsg").addEventListener("submit", async e => {
 const lb = $("lb");
 function abrirLb(i) { idxLb = i; mostrarLb(); lb.classList.add("on"); }
 function mostrarLb() {
-  const f = fotos[idxLb]; if (!f) return;
+  const f = lista[idxLb]; if (!f) return;
   $("lbImg").src = f.url;
-  $("lbCap").textContent = f.nombre ? "📸 " + f.nombre : "";
+  $("lbCap").textContent = (f.nombre ? "📸 " + f.nombre + "  ·  " : "") + (idxLb + 1) + " / " + lista.length;
 }
-function mover(d) { idxLb = (idxLb + d + fotos.length) % fotos.length; mostrarLb(); }
+function mover(d) { idxLb = (idxLb + d + lista.length) % lista.length; mostrarLb(); }
 $("lbX").onclick = () => lb.classList.remove("on");
 $("lbP").onclick = () => mover(-1);
 $("lbN").onclick = () => mover(1);
@@ -472,6 +531,14 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape") lb.classList.remove("on");
   if (e.key === "ArrowLeft") mover(-1);
   if (e.key === "ArrowRight") mover(1);
+});
+
+/* deslizar con el dedo para pasar de foto */
+let tx = 0;
+lb.addEventListener("touchstart", e => { tx = e.changedTouches[0].clientX; }, { passive: true });
+lb.addEventListener("touchend", e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) > 50) mover(dx < 0 ? 1 : -1);
 });
 
 /* ---------- botones "copiar" del SQL ---------- */
