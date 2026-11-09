@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bautismo de Mateo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!--
+=====================================================================
+  GUÍA RÁPIDA (todo está explicado acá y también al final de la web)
+=====================================================================
+  1) Editá el bloque CONFIG (más abajo, en el <script>): nombre, fecha, lugar, mensaje.
+  2) Creá un proyecto gratis en https://supabase.com
+  3) En Supabase > SQL Editor pegá el SQL que aparece en la sección
+     "Configuración" al final de esta página y ejecutalo (RUN).
+  4) En Supabase > Project Settings > API copiá:
+        - Project URL            -> SUPABASE_URL
+        - anon public key        -> SUPABASE_ANON_KEY
+     y pegalos en CONFIG.
+  5) Subí este archivo a Netlify / Vercel / GitHub Pages / tu hosting.
+  6) Generá un QR con el link de la web y ponelo en las mesas.
+  Listo: todo lo que suban los invitados aparece solo, en vivo.
+
+  Moderación: en Supabase > Table Editor, destildá la columna "visible"
+  de una foto o mensaje y desaparece de la web. O borrá la fila.
+
+  Mientras no completes las claves, la web funciona en MODO DEMO
+  (datos de ejemplo, nada se guarda).
+=====================================================================
+-->
+
+<style>
+:root{
+  --crema:#fbf7f0; --papel:#fffdf8; --azul:#cfe3f1; --azul-fuerte:#7fa9c9;
+  --dorado:#c2a26a; --texto:#3d4a57; --suave:#8a97a3; --sombra:0 10px 30px rgba(80,100,120,.15);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Jost',sans-serif;background:var(--crema);color:var(--texto);line-height:1.6;overflow-x:hidden}
+h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:600}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+
+/* ---------- HERO ---------- */
+.hero{position:relative;text-align:center;padding:90px 20px 110px;background:
+  radial-gradient(circle at 20% 20%,#e6f1f9 0,transparent 45%),
+  radial-gradient(circle at 85% 70%,#f4ead6 0,transparent 40%),var(--crema);overflow:hidden}
+.hero .cruz{width:54px;height:54px;margin:0 auto 18px;opacity:.9}
+.hero small{letter-spacing:.35em;text-transform:uppercase;color:var(--dorado);font-size:.8rem}
+.hero h1{font-size:clamp(3rem,10vw,6rem);line-height:1.05;margin:10px 0 6px;color:#4f6f8a;font-style:italic;font-weight:400}
+.hero .sub{font-family:'Caveat',cursive;font-size:1.7rem;color:var(--suave)}
+.datos{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:28px 0 34px}
+.dato{background:var(--papel);border:1px solid #eadfc9;border-radius:50px;padding:8px 20px;font-size:.95rem;box-shadow:var(--sombra)}
+.botones{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{border:0;cursor:pointer;font-family:inherit;font-size:1rem;padding:13px 28px;border-radius:50px;background:var(--azul-fuerte);color:#fff;text-decoration:none;transition:.25s;box-shadow:0 6px 16px rgba(127,169,201,.45)}
+.btn:hover{transform:translateY(-2px);background:#6a96b9}
+.btn.sec{background:transparent;color:var(--azul-fuerte);border:1.5px solid var(--azul-fuerte);box-shadow:none}
+.btn:disabled{opacity:.6;cursor:wait;transform:none}
+.estrella{position:absolute;color:var(--dorado);opacity:.55;animation:flota 6s ease-in-out infinite}
+@keyframes flota{50%{transform:translateY(-12px) rotate(10deg)}}
+.olas{position:absolute;bottom:-1px;left:0;width:100%;height:50px}
+
+/* ---------- SECCIONES ---------- */
+section{padding:70px 0}
+.titulo{text-align:center;margin-bottom:36px}
+.titulo h2{font-size:clamp(2rem,6vw,3rem);color:#4f6f8a}
+.titulo p{color:var(--suave)}
+.titulo .linea{width:70px;height:2px;background:var(--dorado);margin:14px auto 0;position:relative}
+.titulo .linea::after{content:"✦";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--crema);padding:0 8px;color:var(--dorado);font-size:.8rem}
+
+.caja{background:var(--papel);border-radius:22px;padding:26px;box-shadow:var(--sombra);border:1px solid #efe6d4;max-width:640px;margin:0 auto 44px}
+label{display:block;font-size:.85rem;color:var(--suave);margin:12px 0 4px}
+input[type=text],textarea{width:100%;border:1.5px solid #e3dccb;background:#fff;border-radius:12px;padding:12px 14px;font-family:inherit;font-size:1rem;color:var(--texto);outline:none;transition:.2s}
+input[type=text]:focus,textarea:focus{border-color:var(--azul-fuerte);box-shadow:0 0 0 3px rgba(127,169,201,.2)}
+textarea{resize:vertical;min-height:110px;font-family:'Caveat',cursive;font-size:1.35rem}
+.contador{text-align:right;font-size:.75rem;color:var(--suave)}
+.drop{border:2px dashed var(--azul-fuerte);border-radius:16px;padding:26px;text-align:center;cursor:pointer;background:#f4f9fc;transition:.2s}
+.drop:hover,.drop.over{background:#e6f1f9}
+.drop b{display:block;font-size:1.05rem;color:#4f6f8a}
+.drop span{font-size:.85rem;color:var(--suave)}
+.previas{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.previas img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.estado{margin-top:12px;font-size:.9rem;text-align:center;min-height:1.2em}
+.estado.ok{color:#4c9a6a}.estado.err{color:#c0564f}
+.barra{height:6px;border-radius:6px;background:#e8eef3;margin-top:12px;overflow:hidden;display:none}
+.barra i{display:block;height:100%;width:0;background:var(--azul-fuerte);transition:width .3s}
+
+/* ---------- ALBUM ---------- */
+.album{columns:4 220px;column-gap:16px}
+.foto{break-inside:avoid;margin-bottom:16px;background:#fff;padding:9px 9px 34px;border-radius:6px;box-shadow:var(--sombra);cursor:zoom-in;position:relative;transition:.3s;animation:aparece .6s both}
+.foto:nth-child(3n+1){transform:rotate(-1.6deg)}
+.foto:nth-child(3n+2){transform:rotate(1.2deg)}
+.foto:nth-child(3n){transform:rotate(-.6deg)}
+.foto:hover{transform:rotate(0) scale(1.03);z-index:2}
+.foto img{width:100%;display:block;border-radius:3px;background:#eef3f7;min-height:90px}
+.foto .quien{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-family:'Caveat',cursive;font-size:1.15rem;color:var(--suave)}
+@keyframes aparece{from{opacity:0;transform:translateY(20px) scale(.96)}}
+.vacio{text-align:center;color:var(--suave);padding:30px;font-family:'Caveat',cursive;font-size:1.5rem;grid-column:1/-1}
+
+/* ---------- CARTITAS ---------- */
+.cartas{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:26px;padding:10px}
+.carta{position:relative;padding:26px 22px 20px;border-radius:6px;box-shadow:var(--sombra);animation:aparece .6s both;transition:.3s;
+  background-image:repeating-linear-gradient(transparent 0 31px,rgba(127,169,201,.22) 31px 32px)}
+.carta:hover{transform:rotate(0) translateY(-4px)!important}
+.carta::before{content:"";position:absolute;top:-10px;left:50%;width:70px;height:20px;transform:translateX(-50%) rotate(-3deg);background:rgba(194,162,106,.35)}
+.carta p{font-family:'Caveat',cursive;font-size:1.5rem;line-height:32px;color:#46586a;word-wrap:break-word;white-space:pre-wrap}
+.carta .de{display:block;text-align:right;margin-top:10px;font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--dorado);font-size:1.1rem}
+.c0{background-color:#fffbea}.c1{background-color:#eef6fc}.c2{background-color:#fdf0f0}.c3{background-color:#f0f8ef}
+
+/* ---------- LIGHTBOX ---------- */
+.lb{position:fixed;inset:0;background:rgba(20,30,40,.92);display:none;align-items:center;justify-content:center;z-index:100;flex-direction:column;padding:20px}
+.lb.on{display:flex}
+.lb img{max-width:100%;max-height:78vh;border-radius:6px;box-shadow:0 10px 50px #000}
+.lb .cap{color:#fff;font-family:'Caveat',cursive;font-size:1.6rem;margin-top:12px}
+.lb button{position:absolute;background:rgba(255,255,255,.15);border:0;color:#fff;font-size:1.8rem;width:48px;height:48px;border-radius:50%;cursor:pointer}
+.lb .x{top:18px;right:18px}.lb .p{left:14px;top:50%}.lb .n{right:14px;top:50%}
+
+/* ---------- AVISO / CONFIG ---------- */
+.demo{background:#fff4d6;border-bottom:1px solid #ecd9a0;text-align:center;padding:10px 16px;font-size:.88rem;color:#7a6320;display:none}
+.demo a{color:#7a6320;font-weight:500}
+details.config{background:#fff;border-radius:18px;padding:22px 26px;box-shadow:var(--sombra);max-width:860px;margin:0 auto}
+details.config summary{cursor:pointer;font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:#4f6f8a}
+details.config h3{margin:22px 0 6px;color:#4f6f8a;font-size:1.3rem}
+details.config ol,details.config ul{margin-left:22px}
+details.config li{margin:6px 0}
+pre{background:#25323f;color:#dbe7f1;padding:16px;border-radius:12px;overflow:auto;font-size:.8rem;line-height:1.5;margin:10px 0;position:relative}
+code{background:#eef3f7;padding:1px 6px;border-radius:5px;font-size:.88em}
+pre code{background:none;padding:0}
+.copiar{position:absolute;top:8px;right:8px;background:#7fa9c9;color:#fff;border:0;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:.75rem}
+
+footer{text-align:center;padding:40px 20px 50px;color:var(--suave)}
+footer .ver{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-style:italic;color:#4f6f8a}
+</style>
+</head>
+<body>
+
+<div class="demo" id="demo">
+  ⚠️ <b>Modo demo:</b> todavía no conectaste Supabase, así que lo que subas no se guarda.
+  <a href="#configuracion">Ver cómo configurarlo ↓</a>
+</div>
+
+<!-- ======================= HERO ======================= -->
+<header class="hero">
+  <span class="estrella" style="top:12%;left:10%;font-size:1.6rem">✦</span>
+  <span class="estrella" style="top:30%;right:12%;font-size:1.1rem;animation-delay:1s">✦</span>
+  <span class="estrella" style="bottom:28%;left:18%;font-size:1rem;animation-delay:2s">✦</span>
+  <span class="estrella" style="bottom:20%;right:20%;font-size:1.8rem;animation-delay:3s">✦</span>
+
+  <svg class="cruz" viewBox="0 0 64 64" fill="none" stroke="#c2a26a" stroke-width="2.5" stroke-linecap="round">
+    <circle cx="32" cy="32" r="28" opacity=".5"/>
+    <path d="M32 14v36M20 26h24"/>
+  </svg>
+  <small id="hSmall">Con la bendición de Dios</small>
+  <h1 id="hNombre">Mateo</h1>
+  <div class="sub" id="hSub">recibe el Santo Bautismo</div>
+
+  <div class="datos">
+    <div class="dato">📅 <span id="hFecha"></span></div>
+    <div class="dato">🕒 <span id="hHora"></span></div>
+    <div class="dato">⛪ <span id="hLugar"></span></div>
+  </div>
+
+  <div class="botones">
+    <a href="#fotos" class="btn">📸 Subir mis fotos</a>
+    <a href="#mensajes" class="btn sec">💌 Dejar un mensaje</a>
+  </div>
+
+  <svg class="olas" viewBox="0 0 1440 50" preserveAspectRatio="none"><path d="M0 25c240 40 480 40 720 10s480-30 720 5v10H0z" fill="#fbf7f0" opacity=".0"/></svg>
+</header>
+
+<!-- ======================= FOTOS ======================= -->
+<section id="fotos">
+  <div class="wrap">
+    <div class="titulo">
+      <h2>Álbum de recuerdos</h2>
+      <p>Subí tus fotos del día y aparecen acá al instante</p>
+      <div class="linea"></div>
+    </div>
+
+    <form class="caja" id="formFoto">
+      <label for="fNombre">Tu nombre</label>
+      <input type="text" id="fNombre" maxlength="40" placeholder="Ej: Tía Laura" required>
+
+      <label>Tus fotos</label>
+      <div class="drop" id="drop">
+        <b>📷 Tocá para elegir fotos</b>
+        <span>o arrastralas hasta acá · podés elegir varias</span>
+      </div>
+      <input type="file" id="fArchivos" accept="image/*" multiple hidden>
+      <div class="previas" id="previas"></div>
+      <div class="barra" id="barra"><i></i></div>
+
+      <div style="text-align:center;margin-top:18px">
+        <button class="btn" type="submit" id="btnFoto">Subir al álbum</button>
+      </div>
+      <div class="estado" id="estFoto"></div>
+    </form>
+
+    <div class="album" id="album"></div>
+  </div>
+</section>
+
+<!-- ======================= MENSAJES ======================= -->
+<section id="mensajes" style="background:linear-gradient(#f4f9fc,#fbf7f0)">
+  <div class="wrap">
+    <div class="titulo">
+      <h2>Cartitas para Mateo</h2>
+      <p>Escribí unas palabras de cariño, buenos deseos o una bendición</p>
+      <div class="linea"></div>
+    </div>
+
+    <form class="caja" id="formMsg">
+      <label for="mNombre">Tu nombre</label>
+      <input type="text" id="mNombre" maxlength="40" placeholder="Ej: Los abuelos" required>
+
+      <label for="mTexto">Tu mensaje</label>
+      <textarea id="mTexto" maxlength="400" placeholder="Querido Mateo..." required></textarea>
+      <div class="contador"><span id="cont">0</span>/400</div>
+
+      <div style="text-align:center;margin-top:14px">
+        <button class="btn" type="submit" id="btnMsg">Enviar cartita 💌</button>
+      </div>
+      <div class="estado" id="estMsg"></div>
+    </form>
+
+    <div class="cartas" id="cartas"></div>
+  </div>
+</section>
+
+<!-- ======================= CONFIGURACIÓN ======================= -->
+<section id="configuracion">
+  <div class="wrap">
+    <details class="config">
+      <summary>⚙️ Configuración (solo para el organizador)</summary>
+
+      <h3>¿Cómo funciona?</h3>
+      <p>Esta página es un solo archivo HTML. Las fotos se guardan en <b>Supabase Storage</b> y los mensajes en una tabla de <b>Supabase</b> (gratis). La web escucha cambios en tiempo real, así que cuando un invitado sube algo, aparece solo en el celular de todos.</p>
+      <p style="margin-top:8px"><i>¿Por qué Supabase y no Google Sheets?</i> Sheets sirve para texto pero no para guardar fotos de forma simple y segura. Supabase guarda ambos, es gratis y es más rápido.</p>
+
+      <h3>Paso 1 · Crear el proyecto</h3>
+      <ol>
+        <li>Entrá a <code>supabase.com</code>, creá una cuenta y un proyecto nuevo (gratis).</li>
+        <li>Esperá un minuto a que termine de crearse.</li>
+      </ol>
+
+      <h3>Paso 2 · Crear tablas y carpeta de fotos</h3>
+      <p>Andá a <b>SQL Editor → New query</b>, pegá esto y apretá <b>RUN</b>:</p>
+<pre><button class="copiar" type="button">Copiar</button><code>-- TABLAS
+create table fotos (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz default now(),
+  nombre text,
+  url text not null,
+  visible boolean default true
+);
+
+create table mensajes (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz default now(),
+  nombre text not null,
+  texto text not null check (char_length(texto) <= 500),
+  visible boolean default true
+);
+
+-- SEGURIDAD: cualquiera puede ver lo visible y agregar, nadie puede borrar
+alter table fotos enable row level security;
+alter table mensajes enable row level security;
+
+create policy "ver fotos" on fotos for select using (visible = true);
+create policy "subir fotos" on fotos for insert with check (true);
+create policy "ver mensajes" on mensajes for select using (visible = true);
+create policy "enviar mensajes" on mensajes for insert with check (true);
+
+-- CARPETA PÚBLICA PARA LAS FOTOS
+insert into storage.buckets (id, name, public) values ('fotos', 'fotos', true);
+create policy "subir al bucket" on storage.objects for insert to anon with check (bucket_id = 'fotos');
+create policy "ver el bucket" on storage.objects for select using (bucket_id = 'fotos');
+
+-- TIEMPO REAL
+alter publication supabase_realtime add table fotos, mensajes;</code></pre>
+
+      <h3>Paso 3 · Copiar las claves</h3>
+      <ol>
+        <li>En Supabase andá a <b>Project Settings → API</b>.</li>
+        <li>Copiá <b>Project URL</b> y la clave <b>anon public</b>.</li>
+        <li>Abrí este archivo con un editor (Bloc de notas, VS Code) y pegalas en el bloque <code>CONFIG</code> dentro del <code>&lt;script&gt;</code>: <code>SUPABASE_URL</code> y <code>SUPABASE_ANON_KEY</code>.</li>
+        <li>Cambiá también nombre, fecha, hora y lugar en ese mismo bloque.</li>
+      </ol>
+      <p>La clave <i>anon</i> es pública por diseño; la seguridad la dan las reglas del Paso 2. <b>Nunca</b> pegues la clave <code>service_role</code>.</p>
+
+      <h3>Paso 4 · Publicar y compartir</h3>
+      <ul>
+        <li>Subí el archivo a Netlify (arrastrar y soltar en <code>app.netlify.com/drop</code>), Vercel o GitHub Pages.</li>
+        <li>Generá un código QR con el link y ponelo en las mesas o en las invitaciones.</li>
+      </ul>
+
+      <h3>Moderación</h3>
+      <ul>
+        <li>En <b>Table Editor</b> destildá <code>visible</code> en cualquier foto o mensaje para ocultarlo, o borrá la fila.</li>
+        <li>Las fotos se achican automáticamente antes de subirse (máx. 1600 px) para ahorrar espacio y datos.</li>
+        <li>El plan gratis da 1 GB de fotos: alcanza para cientos de fotos.</li>
+      </ul>
+
+      <h3>Mientras tanto…</h3>
+      <p>Si <code>SUPABASE_URL</code> está vacío, la web corre en <b>modo demo</b> con datos de ejemplo, para que veas cómo queda.</p>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <div class="ver" id="fPie">Gracias por compartir este día tan especial</div>
+  <div style="margin-top:6px">✦ ✦ ✦</div>
+</footer>
+
+<!-- LIGHTBOX -->
+<div class="lb" id="lb">
+  <button class="x" id="lbX" aria-label="Cerrar">✕</button>
+  <button class="p" id="lbP" aria-label="Anterior">‹</button>
+  <button class="n" id="lbN" aria-label="Siguiente">›</button>
+  <img id="lbImg" alt="">
+  <div class="cap" id="lbCap"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* =====================================================================
+   CONFIG — editá solo esto
+   ===================================================================== */
+const CONFIG = {
+  NOMBRE:  "Mateo",
+  FRASE:   "recibe el Santo Bautismo",
+  FECHA:   "Sábado 14 de diciembre de 2026",
+  HORA:    "16:00 hs",
+  LUGAR:   "Parroquia San José · Córdoba",
+  PIE:     "Gracias por compartir este día tan especial",
+
+  SUPABASE_URL:      "https://rotwrfnqltrhkrdhkuah.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_iyh0nkDc9uYwkWm5EX8HXA_7jXySR-M",
+  BUCKET:            "fotos",
+  MAX_PX:            1600, // las fotos se achican a este tamaño máximo
+  MAX_FOTOS_POR_VEZ: 10
+};
+
+/* ===================================================================== */
+const $ = id => document.getElementById(id);
+const ok = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase);
+const db = ok ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null;
+
+let fotos = [], mensajes = [], seleccion = [], idxLb = 0;
+
+/* ---------- textos de la config ---------- */
+document.title = "Bautismo de " + CONFIG.NOMBRE;
+$("hNombre").textContent = CONFIG.NOMBRE;
+$("hSub").textContent = CONFIG.FRASE;
+$("hFecha").textContent = CONFIG.FECHA;
+$("hHora").textContent = CONFIG.HORA;
+$("hLugar").textContent = CONFIG.LUGAR;
+$("fPie").textContent = CONFIG.PIE;
+document.querySelector("#mensajes h2").textContent = "Cartitas para " + CONFIG.NOMBRE;
+
+/* ---------- modo demo ---------- */
+if (!ok) {
+  $("demo").style.display = "block";
+  const svg = t => "data:image/svg+xml;utf8," + encodeURIComponent(t);
+  const mk = (c1, c2, e, h) => svg(`<svg xmlns='http://www.w3.org/2000/svg' width='600' height='${h}'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/></linearGradient></defs><rect width='600' height='${h}' fill='url(#g)'/><text x='300' y='${h/2+30}' font-size='90' text-anchor='middle'>${e}</text></svg>`);
+  fotos = [
+    {id:1,nombre:"Tía Laura",url:mk("#cfe3f1","#f4ead6","👶",700)},
+    {id:2,nombre:"Los abuelos",url:mk("#f4ead6","#fdf0f0","⛪",500)},
+    {id:3,nombre:"Padrinos",url:mk("#e6f1f9","#cfe3f1","🕊️",600)},
+    {id:4,nombre:"Marcos",url:mk("#fdf0f0","#f4ead6","🎂",520)},
+    {id:5,nombre:"Sofi",url:mk("#f0f8ef","#cfe3f1","✨",680)},
+    {id:6,nombre:"Primos",url:mk("#cfe3f1","#fdf0f0","🎈",540)}
+  ];
+  mensajes = [
+    {id:1,nombre:"Los abuelos",texto:"Querido Mateo, que Dios te cuide y te acompañe siempre. Te amamos con todo el corazón."},
+    {id:2,nombre:"Tía Laura",texto:"Hoy empieza un camino lleno de luz. ¡Qué orgullo verte tan hermoso!"},
+    {id:3,nombre:"Padrinos",texto:"Prometemos cuidarte, quererte y guiarte. Gracias por elegirnos."},
+    {id:4,nombre:"Marcos",texto:"Que crezcas sano, feliz y rodeado de amor. ¡Un abrazo enorme!"}
+  ];
+}
+
+/* ---------- render ---------- */
+function renderFotos() {
+  const a = $("album");
+  a.innerHTML = "";
+  if (!fotos.length) { a.innerHTML = '<div class="vacio">Sé el primero en subir una foto 📸</div>'; return; }
+  fotos.forEach((f, i) => {
+    const d = document.createElement("div");
+    d.className = "foto";
+    d.style.animationDelay = Math.min(i * 0.05, 0.6) + "s";
+    const img = document.createElement("img");
+    img.src = f.url; img.loading = "lazy"; img.alt = "Foto de " + (f.nombre || "invitado");
+    const q = document.createElement("div");
+    q.className = "quien"; q.textContent = f.nombre || "";
+    d.append(img, q);
+    d.onclick = () => abrirLb(i);
+    a.appendChild(d);
+  });
+}
+
+function renderMensajes() {
+  const c = $("cartas");
+  c.innerHTML = "";
+  if (!mensajes.length) { c.innerHTML = '<div class="vacio">Todavía no hay cartitas. ¡Escribí la primera! 💌</div>'; return; }
+  mensajes.forEach((m, i) => {
+    const d = document.createElement("div");
+    d.className = "carta c" + (i % 4);
+    const rot = [-2, 1.5, -1, 2.2, -1.6][i % 5];
+    d.style.transform = `rotate(${rot}deg)`;
+    d.style.animationDelay = Math.min(i * 0.06, 0.6) + "s";
+    const p = document.createElement("p"); p.textContent = m.texto;
+    const s = document.createElement("span"); s.className = "de"; s.textContent = "— " + m.nombre;
+    d.append(p, s);
+    c.appendChild(d);
+  });
+}
+
+/* ---------- carga + tiempo real ---------- */
+async function cargar() {
+  if (!ok) { renderFotos(); renderMensajes(); return; }
+  const [f, m] = await Promise.all([
+    db.from("fotos").select("*").eq("visible", true).order("created_at", { ascending: false }),
+    db.from("mensajes").select("*").eq("visible", true).order("created_at", { ascending: false })
+  ]);
+  if (!f.error) fotos = f.data;
+  if (!m.error) mensajes = m.data;
+  renderFotos(); renderMensajes();
+}
+
+if (ok) {
+  db.channel("bautismo")
+    .on("postgres_changes", { event: "*", schema: "public", table: "fotos" }, cargar)
+    .on("postgres_changes", { event: "*", schema: "public", table: "mensajes" }, cargar)
+    .subscribe();
+  setInterval(cargar, 30000); // respaldo por si falla el tiempo real
+}
+cargar();
+
+/* ---------- selección de fotos ---------- */
+const drop = $("drop"), inp = $("fArchivos");
+drop.onclick = () => inp.click();
+inp.onchange = () => setSel([...inp.files]);
+["dragover", "dragenter"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", ev => setSel([...ev.dataTransfer.files]));
+
+function setSel(files) {
+  seleccion = files.filter(f => f.type.startsWith("image/")).slice(0, CONFIG.MAX_FOTOS_POR_VEZ);
+  const p = $("previas"); p.innerHTML = "";
+  seleccion.forEach(f => { const im = document.createElement("img"); im.src = URL.createObjectURL(f); p.appendChild(im); });
+  $("estFoto").textContent = seleccion.length ? seleccion.length + " foto(s) lista(s)" : "";
+  $("estFoto").className = "estado";
+}
+
+/* ---------- achicar imagen ---------- */
+function achicar(file) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width: w, height: h } = img;
+      const k = Math.min(1, CONFIG.MAX_PX / Math.max(w, h));
+      w = Math.round(w * k); h = Math.round(h * k);
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      c.toBlob(b => b ? res(b) : rej(new Error("No se pudo procesar la imagen")), "image/jpeg", 0.82);
+    };
+    img.onerror = () => rej(new Error("Imagen no válida"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+/* ---------- subir fotos ---------- */
+$("formFoto").addEventListener("submit", async e => {
+  e.preventDefault();
+  const est = $("estFoto"), btn = $("btnFoto"), barra = $("barra");
+  const nombre = $("fNombre").value.trim();
+  if (!seleccion.length) { est.textContent = "Elegí al menos una foto"; est.className = "estado err"; return; }
+  btn.disabled = true; barra.style.display = "block"; est.className = "estado";
+  try {
+    for (let i = 0; i < seleccion.length; i++) {
+      est.textContent = `Subiendo ${i + 1} de ${seleccion.length}…`;
+      barra.firstElementChild.style.width = (i / seleccion.length * 100) + "%";
+      const blob = await achicar(seleccion[i]);
+      if (!ok) {
+        fotos.unshift({ id: Date.now() + i, nombre, url: URL.createObjectURL(blob) });
+        continue;
+      }
+      const ruta = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+      const up = await db.storage.from(CONFIG.BUCKET).upload(ruta, blob, { contentType: "image/jpeg" });
+      if (up.error) throw up.error;
+      const url = db.storage.from(CONFIG.BUCKET).getPublicUrl(ruta).data.publicUrl;
+      const ins = await db.from("fotos").insert({ nombre, url });
+      if (ins.error) throw ins.error;
+    }
+    barra.firstElementChild.style.width = "100%";
+    est.textContent = "¡Fotos subidas! Gracias 💙"; est.className = "estado ok";
+    seleccion = []; inp.value = ""; $("previas").innerHTML = "";
+    if (ok) cargar(); else renderFotos();
+  } catch (err) {
+    console.error(err);
+    est.textContent = "No se pudo subir. Probá de nuevo."; est.className = "estado err";
+  }
+  btn.disabled = false;
+  setTimeout(() => { barra.style.display = "none"; barra.firstElementChild.style.width = "0"; }, 1200);
+});
+
+/* ---------- enviar mensaje ---------- */
+$("mTexto").addEventListener("input", e => $("cont").textContent = e.target.value.length);
+
+$("formMsg").addEventListener("submit", async e => {
+  e.preventDefault();
+  const est = $("estMsg"), btn = $("btnMsg");
+  const nombre = $("mNombre").value.trim(), texto = $("mTexto").value.trim();
+  if (!nombre || !texto) return;
+  btn.disabled = true; est.className = "estado"; est.textContent = "Enviando…";
+  try {
+    if (ok) {
+      const r = await db.from("mensajes").insert({ nombre, texto });
+      if (r.error) throw r.error;
+      cargar();
+    } else {
+      mensajes.unshift({ id: Date.now(), nombre, texto });
+      renderMensajes();
+    }
+    est.textContent = "¡Cartita enviada! 💌"; est.className = "estado ok";
+    $("mTexto").value = ""; $("cont").textContent = "0";
+  } catch (err) {
+    console.error(err);
+    est.textContent = "No se pudo enviar. Probá de nuevo."; est.className = "estado err";
+  }
+  btn.disabled = false;
+});
+
+/* ---------- lightbox ---------- */
+const lb = $("lb");
+function abrirLb(i) { idxLb = i; mostrarLb(); lb.classList.add("on"); }
+function mostrarLb() {
+  const f = fotos[idxLb]; if (!f) return;
+  $("lbImg").src = f.url;
+  $("lbCap").textContent = f.nombre ? "📸 " + f.nombre : "";
+}
+function mover(d) { idxLb = (idxLb + d + fotos.length) % fotos.length; mostrarLb(); }
+$("lbX").onclick = () => lb.classList.remove("on");
+$("lbP").onclick = () => mover(-1);
+$("lbN").onclick = () => mover(1);
+lb.addEventListener("click", e => { if (e.target === lb) lb.classList.remove("on"); });
+document.addEventListener("keydown", e => {
+  if (!lb.classList.contains("on")) return;
+  if (e.key === "Escape") lb.classList.remove("on");
+  if (e.key === "ArrowLeft") mover(-1);
+  if (e.key === "ArrowRight") mover(1);
+});
+
+/* ---------- botones "copiar" del SQL ---------- */
+document.querySelectorAll(".copiar").forEach(b => b.onclick = () => {
+  navigator.clipboard.writeText(b.parentElement.querySelector("code").textContent);
+  b.textContent = "¡Copiado!"; setTimeout(() => b.textContent = "Copiar", 1500);
+});
+</script>
+</body>
+</html>
